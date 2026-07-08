@@ -1,6 +1,6 @@
 -- schema.sql
 -- Create the conn_logs table BEFORE importing (schemas are defined before data loads).
--- Column names match Zeek conn.log field order so the tab-delimited import lines up.
+-- Column names follow Zeek conn.log field order so the tab-separated import lines up.
 
 CREATE TABLE conn_logs (
   ts TEXT, uid TEXT, orig_h TEXT, orig_p TEXT,
@@ -12,5 +12,7 @@ CREATE TABLE conn_logs (
   tunnel_parents TEXT
 );
 
+-- Zeek conn.log is tab-separated. Set the import mode to tabs, then load the
+-- header-stripped file (see import_notes.md for how conn_clean.tsv is produced).
 .mode tabs
-.import conn_clean.csv conn_logs
+.import conn_clean.tsv conn_logs
