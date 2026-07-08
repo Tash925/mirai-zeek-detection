@@ -1,56 +1,36 @@
-\# Setup --- Loading a Zeek conn.log into SQLite
+# Setup — Loading a Zeek conn.log into SQLite
 
-The dataset: \[DNS and Connections Log --- Zeek/Corelight
-(Kaggle)\](https://www.kaggle.com/datasets/mimansari/dns-and-connections-log-zeek-or-corelight).
+The dataset: [DNS and Connections Log — Zeek/Corelight (Kaggle)](https://www.kaggle.com/datasets/mimansari/dns-and-connections-log-zeek-or-corelight).
+This project uses **conn.log** — the connection log (1,319,960 records).
 
-This project uses \*\*conn.log\*\* --- the connection log (1,319,960
-records).
+## Step 1 — Strip the Zeek metadata header
 
-\#\# Step 1 --- Strip the Zeek metadata header
-
-Zeek\'s conn.log is not a clean CSV. It opens with metadata lines
-starting
-
-with \`\#\`. If you import as-is, those lines load as data rows and your
-column
-
+Zeek's conn.log is not a clean CSV. It opens with metadata lines starting
+with `#`. If you import as-is, those lines load as data rows and your column
 names become timestamps and IP addresses. Strip them first:
 
-\`\`\`bash
+```bash
+grep -v "^#" conn.log > conn_clean.csv
+```
 
-grep -v \"\^\#\" conn.log \> conn_clean.csv
+## Step 2 — Create the table, then import
 
-\`\`\`
+Define the schema *before* loading the data (see `schema.sql`). From the
+folder containing `conn_clean.csv`, launch SQLite and run:
 
-\#\# Step 2 --- Create the table, then import
+```bash
+sqlite3 investigation.db < schema.sql
+```
 
-Define the schema \*before\* loading the data (see \`schema.sql\`). From
-the
+## Step 3 — Confirm the load
 
-folder containing \`conn_clean.csv\`, launch SQLite and run:
+```sql
+SELECT COUNT(*) FROM conn_logs;
+-- Expected: 1,319,960
+```
 
-\`\`\`bash
+> Debugging note: if `COUNT(*)` returns nothing, check you're in the right
+> folder — a mistyped folder name is the most common cause of a silent
+> empty result. Learning to debug your environment matters as much as
+> knowing the queries.
 
-sqlite3 investigation.db \< schema.sql
-
-\`\`\`
-
-\#\# Step 3 --- Confirm the load
-
-\`\`\`sql
-
-SELECT COUNT(\*) FROM conn_logs;
-
-\-- Expected: 1,319,960
-
-\`\`\`
-
-\> Debugging note: if \`COUNT(\*)\` returns nothing, check you\'re in
-the right
-
-\> folder --- a mistyped folder name is the most common cause of a
-silent
-
-\> empty result. Learning to debug your environment matters as much as
-
-\> knowing the queries.
