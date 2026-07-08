@@ -18,21 +18,18 @@ sqlite3 investigation.db < setup/schema.sql
 # 2. Run the investigation queries in order
 sqlite3 investigation.db < queries/01_baseline.sql
 sqlite3 investigation.db < queries/02_failed_connections.sql
-# ...through 08
+sqlite3 investigation.db < queries/03_port_signatures.sql
+sqlite3 investigation.db < queries/04_host_summary.sql
 ```
 
 ## 🔍 What this toolkit detects
 
 | Query | Detects | Key finding from my hunt |
 |---|---|---|
-| `01_baseline` | Normal connection behavior | 94.6% success on clean hosts |
-| `02_failed_connections` | Scanning behavior (S0 flood) | `192.168.10.43` — 513,865 failed attempts |
-| `03_port_signatures` | Mirai port targeting | Ports 23, 22, 2323, 2222 |
-| `04_lateral_movement` | Internal spread | Across 4 subnets |
-| `05_c2_beaconing` | Command-and-control | Fixed 999-byte payloads |
-| `06_timeline_cadence` | Automation rhythm | 36-second attack cadence |
-| `07_peer_coordination` | Infected-host coordination | 95,716 p2p connections |
-| `08_ssh_intrusion` | External entry point | `5.45.85.158`, 1.6M+ bytes, 3h+ sessions |
+| `01_baseline` | Network-wide connection health | 647,224 S0 attempts — 60%+ never completed |
+| `02_failed_connections` | The source host of the S0 flood | `192.168.10.43` — 513,865 S0 (79% of all unanswered) |
+| `03_port_signatures` | Mirai port targeting | Ports 23, 22, 2323 — the Mirai signature |
+| `04_host_summary` | Full threat profile in one query | `.43` at 17.7% success vs. clean host at 94.6% |
 
 ## 📖 The full investigation
 
@@ -44,7 +41,9 @@ Originally published on [DataSec Chronicles](https://datasecchronicles.com).
 ## 🧰 Tools & concepts
 
 **Tools:** SQLite · SQL · Zeek `conn.log` · command-line log prep
-**Concepts:** anomaly detection · Mirai signatures · C2 beaconing · lateral movement · brute-force detection · connection-state (S0) analysis
+**Concepts:** anomaly detection · connection-state (S0) analysis · Mirai port signatures · scanning identification · lateral movement · kill-chain reconstruction
+
+*Part 2 (forthcoming) extends this with C2 beaconing, attack-timing analysis, and external SSH brute-force detection.*
 
 ## 📂 What's in here
 
@@ -55,7 +54,7 @@ Originally published on [DataSec Chronicles](https://datasecchronicles.com).
 
 ## 📝 Note on the data
 
-This investigation used a practice Zeek dataset. The internal IPs are from that lab environment.
+This investigation used a public Zeek/Corelight dataset from Kaggle: [DNS and Connections Log](https://www.kaggle.com/datasets/mimansari/dns-and-connections-log-zeek-or-corelight). The `conn.log` (1,319,960 records) is the source for every query here. All IPs are from that public dataset.
 
 ---
 
