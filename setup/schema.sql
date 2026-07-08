@@ -13,6 +13,6 @@ CREATE TABLE conn_logs (
 );
 
 -- Zeek conn.log is tab-separated. Set the import mode to tabs, then load the
--- header-stripped file (see import_notes.md for how conn_clean.tsv is produced).
+-- header-stripped file (see import_notes.md for how conn_clean.csv is produced).
 .mode tabs
-.import conn_clean.tsv conn_logs
+.import conn_clean.csv conn_logs
