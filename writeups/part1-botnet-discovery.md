@@ -4,6 +4,8 @@
 
 *Originally published on [DataSec Chronicles](https://datasecchronicles.com). Adapted here as the investigation writeup for this toolkit.*
 
+> **Updated:** After the deeper analysis in Part 2, I revisited the host classifications below and tightened them to what the data strictly supports. The core discovery — a Mirai-infected host mass-scanning from inside the network — is unchanged. What I refined: some hosts I'd initially grouped as "infected" turned out to be doing different things (internal reconnaissance, HTTP traffic), and one I'd flagged as a possible C2 server doesn't fit that role. Re-auditing your own findings is the job; I'm leaving the correction visible rather than quietly swapping numbers.
+
 ---
 
 ## The starting point
@@ -34,21 +36,23 @@ Scanning behavior narrows the suspects. To name the malware, I looked at which p
 
 At that point this stopped being a hypothesis and became an identification.
 
-## The full picture — three infected hosts
+## The full picture — more than one anomalous host
 
-One infected host is an incident. I wanted to know if it was the only one. So I built a single summary query — every host, total connections, failed scans, successful connections, ICMP recon, and success rate — to profile the whole network at once.
+One infected host is an incident. I wanted to know if it was the only one. So I built a single summary query — every host, total connections, failed scans, successful connections, and success rate — to profile the whole network at once.
 
-It surfaced more than one problem:
+It surfaced several hosts worth a closer look:
 
-| Host | Total | Success rate | Verdict |
+| Host | Total | Success rate | What the data shows |
 |---|---|---|---|
-| 192.168.10.43 | 894,218 | 17.7% | Primary threat actor |
-| 192.168.10.50 | 251,368 | 0% | Confirmed botnet node |
-| 10.200.200.80 | 40,615 | 4% | Likely third infected host |
+| 192.168.10.43 | 894,218 | 17.7% | Confirmed Mirai scanner — telnet-family ports, primary threat |
+| 192.168.10.50 | 251,368 | ~0% | Heavy scanning, but HTTPS/ICMP — internal recon, not Mirai (see Part 2) |
+| 10.200.200.80 | 40,615 | 4% | External scanner — HTTPS/ICMP/DNS discovery, not telnet; role unconfirmed |
+| 54.243.185.88 | 10,564 | 99.9% | High-volume outbound HTTP — likely a normal client, not a threat |
 | 192.168.61.21 | 24,567 | 94.6% | Normal — baseline host |
-| 54.243.185.88 | 10,564 | 99.9% | Suspected C2 server (AWS) |
 
-`.50` completing **zero** connections while generating scans is a dead giveaway of an infected node doing nothing but attacking. `10.200.200.80` sat on a *different subnet* — evidence the infection had already moved laterally across the network, not just spread within one segment. Three infected hosts, at least two subnets, plus a suspected external command-and-control server all fell out of one query.
+Only `.43` fits the Mirai signature cleanly — it's the one hammering telnet-family ports at scale, and it's the confirmed infection. The others are more nuanced than my first pass assumed: `.50` is scanning too, but on HTTPS and ICMP rather than telnet, which reads as internal reconnaissance (Part 2 digs into this). `10.200.200.80` is also sweeping, but again not on Mirai's ports — so "scanner," yes; "Mirai node," not established. And `54.243.185.88`, which I'd initially eyed as a possible C2 server, turns out to only *originate* connections — almost all outbound HTTP — which is the opposite of what a C2 server looks like. It's most likely a normal high-volume client.
+
+The honest takeaway from this query: **one confirmed Mirai infection (`.43`), plus additional anomalous scanning hosts whose exact roles need the deeper analysis in Part 2.** The instinct to check for more than one problem was right — but naming each host's role required more than a single success-rate number.
 
 ## The closing number
 
@@ -65,11 +69,11 @@ That gap tells the whole story in two numbers. A healthy host completes almost e
 
 - A network-wide scanning fingerprint: 647,224 S0 connections, 60%+ never completing
 - A primary infected host (`.43`) responsible for 79% of all failed attempts
-- Mirai port signatures (23, 22, 2323) confirming the malware family
-- Three infected hosts across at least two subnets — lateral movement in progress
-- A 17.7% vs 94.6% success-rate gap separating infected from clean
+- Mirai port signatures (23, 22, 2323) on `.43` confirming the malware family
+- Additional anomalous scanning hosts (`.50`, `10.200.200.80`) whose roles Part 2 investigates
+- A 17.7% vs 94.6% success-rate gap separating the infected host from a clean one
 
-That's the core discovery. But every one of these findings raised a sharper question — *how is it being controlled? is it automated? how did it get in?* — and those answers are in [Part 2](part2-c2-brute-force-ssh.md).
+That's the core discovery. But every one of these findings raised a sharper question — *how is it being controlled? is it automated? how did it get in? and what exactly are those other scanning hosts doing?* — and those answers are in [Part 2](part2-c2-brute-force-ssh.md).
 
 ---
 
