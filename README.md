@@ -22,6 +22,10 @@ sqlite3 investigation.db < queries/03_port_signatures.sql
 sqlite3 investigation.db < queries/04_host_summary.sql
 sqlite3 investigation.db < queries/05_c2_beaconing.sql
 sqlite3 investigation.db < queries/06_internal_recon.sql
+sqlite3 investigation.db < queries/07_ssh_bruteforce.sql
+sqlite3 investigation.db < queries/08_intruder_deepdive.sql
+sqlite3 investigation.db < queries/09_services.sql
+sqlite3 investigation.db < queries/10_timeline.sql
 ```
 
 ## 🔍 What this toolkit detects
@@ -34,6 +38,10 @@ sqlite3 investigation.db < queries/06_internal_recon.sql
 | `04_host_summary` | Full threat profile in one query | `.43` at 17.7% success vs. clean host at 94.6% |
 | `05_c2_beaconing` | C2 beaconing (regularity, not average) | `192.168.60.22` → 4 external C2 servers at ~755s cadence (CV<0.1) |
 | `06_internal_recon` | Internal reconnaissance / lateral movement | `192.168.10.50` swept 771 internal hosts (HTTPS+ICMP sweep, targeted SMB/RPC/FTP) |
+| `07_ssh_bruteforce` | External SSH brute-force campaigns | Multiple external IPs; sequential `.133`/`.134` pair — coordinated |
+| `08_intruder_deepdive` | Successful intrusion vs. failed brute force | `5.45.85.158` → `.43`: 3h18m session, ~4MB — confirmed inside |
+| `09_services` | "Normal" traffic during the breach | 74,614 HTTP sessions completed while the breach was active |
+| `10_timeline` | Incident chronology reconstruction | Recon + C2 active ~28h *before* the SSH intrusion — network already compromised |
 
 ## 📖 The full investigation
 
