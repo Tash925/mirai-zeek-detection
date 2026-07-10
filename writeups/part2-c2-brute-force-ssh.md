@@ -9,12 +9,14 @@
 
 Part 1 identified a Mirai botnet infection: mass scanning, the telnet-family port signature, and a success-rate comparison that made the compromise undeniable. Part 2 goes deeper — and every figure here was re-run against the raw logs before it was written down. Where an early pass over-counted or mislabeled a finding, the corrected result is what appears below.
 
-The complete incident:
+The complete incident (four distinct malicious behaviors):
 
-- **Entry:** external `5.45.85.158` brute-forces SSH into `192.168.10.43`
-- **Propagation:** `192.168.10.43` becomes a Mirai scanner, spraying 338,181 external IPs
-- **Reconnaissance:** `192.168.10.50` sweeps 771 internal hosts to map the network
 - **Command & control:** `192.168.60.22` beacons to 4 external C2 servers on a ~755s cadence
+- **Reconnaissance:** `192.168.10.50` sweeps 771 internal hosts to map the network
+- **SSH intrusion:** external `5.45.85.158` brute-forces into `192.168.10.43`
+- **Propagation:** `192.168.10.43` becomes a Mirai scanner, spraying 338,181 external IPs
+
+A note on order: the timestamps (Finding 6) show the recon and C2 beaconing were already active more than a day *before* the SSH intrusion. The intrusion explains `.43`'s compromise — scanning starts 29 minutes after the attacker logs in — but the network was already compromised when the capture began.
 
 ---
 
@@ -78,6 +80,8 @@ While internal hosts scanned, external IPs hammered the network. Completed (SF) 
 
 The sequential `.133`/`.134` pair points to one operator across multiple machines. The infected internal host `.43` appears here too — scanning for telnet victims *and* attempting SSH logins. And `5.45.85.158` stood far outside the brute-force norm on average bytes, demanding a dedicated look.
 
+> Query file: `queries/07_ssh_bruteforce.sql`
+
 ---
 
 ## Finding 4 — The Intruder Inside (5.45.85.158)
@@ -92,7 +96,9 @@ Brute force is noise until one succeeds. Pulling everything `5.45.85.158` did:
 | Longest session | 11,888s (3h 18m) | Hands-on-keyboard presence |
 | Total transferred | ~4.0 MB | Real data movement into the host |
 
-An external IP holding a **3-hour-18-minute session**, moving ~4 MB across 85 sessions into the *same host* running the Mirai scanner — that points to the SSH intrusion as the likely entry point for the entire infection. This is a confirmed intrusion, not a failed attempt.
+An external IP holding a **3-hour-18-minute session**, moving ~4 MB across 85 sessions into the *same host* running the Mirai scanner — that points to the SSH intrusion as the trigger for `.43`'s compromise (scanning begins 29 minutes later). This is a confirmed intrusion, not a failed attempt. It does *not*, however, explain `.50` or `.60.22`, which the timestamps show were active more than a day earlier — see Finding 6.
+
+> Query file: `queries/08_intruder_deepdive.sql`
 
 ---
 
@@ -113,6 +119,27 @@ The simplest query was the most unsettling. Completed sessions by service, while
 
 That gap — between what the traffic looked like and what was happening — is why threat hunting exists. Alerts tell you something fired. Hunting tells you what was already there before anything fired at all.
 
+> Query file: `queries/09_services.sql`
+
+---
+
+## Finding 6 — The Timeline (What Order Did This Happen In?)
+
+The intuitive assumption was that the SSH intrusion was patient zero. Pulling the first-seen time for each activity disproved it:
+
+| Time (UTC) | Event | Host |
+|---|---|---|
+| May 1, 12:34 | Internal recon begins | `192.168.10.50` — active at capture start |
+| May 1, 17:38 | C2 beaconing begins | `192.168.60.22` → 4 external servers |
+| **May 2, 16:36** | **SSH intrusion begins (~28h later)** | `5.45.85.158` → `192.168.10.43` |
+| **May 2, 17:05** | **Mirai scanning begins (+29 min)** | `192.168.10.43` → 338,181 external IPs |
+
+Internal recon and C2 beaconing were running **more than a day before** the SSH intrusion. The intrusion cleanly explains `.43` — but not `.50` or `.60.22`, which predate it. The network was already compromised before the intrusion visible in these logs.
+
+**Caveat:** these are *first-seen-in-capture* times, not necessarily true patient-zero. An earlier compromise could predate the logged window entirely.
+
+> Query file: `queries/10_timeline.sql`
+
 ---
 
 ## ISC2 CC Domain Connections
@@ -129,7 +156,7 @@ The `5.45.85.158` finding maps to IR concepts around containment and forensic pr
 
 - **Analyze the DNS log.** Cross-reference the 4 C2 IPs from `.60.22` and the `5.45.85.158` sessions against `dns.log` to name the botnet infrastructure.
 - **Confirm the status of 192.168.10.50.** Its network-wide sweep is either lateral movement or an authorized scanner — a single asset check resolves which.
-- **Build a formal incident timeline** from the event timestamps: first scan → infection → SSH intrusion → recon → C2 established.
+- **Trace the earlier compromise.** The timeline shows recon and C2 active before the SSH intrusion in the logs. Earlier captures — or DNS and auth logs from before this window — would help find how `.50` and `.60.22` were first compromised, since the SSH intrusion only explains `.43`.
 
 ---
 
