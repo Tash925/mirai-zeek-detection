@@ -20,6 +20,8 @@ sqlite3 investigation.db < queries/01_baseline.sql
 sqlite3 investigation.db < queries/02_failed_connections.sql
 sqlite3 investigation.db < queries/03_port_signatures.sql
 sqlite3 investigation.db < queries/04_host_summary.sql
+sqlite3 investigation.db < queries/05_c2_beaconing.sql
+sqlite3 investigation.db < queries/06_internal_recon.sql
 ```
 
 ## 🔍 What this toolkit detects
@@ -30,20 +32,22 @@ sqlite3 investigation.db < queries/04_host_summary.sql
 | `02_failed_connections` | The source host of the S0 flood | `192.168.10.43` — 513,865 S0 (79% of all unanswered) |
 | `03_port_signatures` | Mirai port targeting | Ports 23, 22, 2323 — the Mirai signature |
 | `04_host_summary` | Full threat profile in one query | `.43` at 17.7% success vs. clean host at 94.6% |
+| `05_c2_beaconing` | C2 beaconing (regularity, not average) | `192.168.60.22` → 4 external C2 servers at ~755s cadence (CV<0.1) |
+| `06_internal_recon` | Internal reconnaissance / lateral movement | `192.168.10.50` swept 771 internal hosts (HTTPS+ICMP sweep, targeted SMB/RPC/FTP) |
 
 ## 📖 The full investigation
 
 - **[Part 1 — From Raw Log to Botnet Discovery](writeups/part1-botnet-discovery.md)**
-- **[Part 2 — C2 Beaconing, Brute Force & the SSH Intrusion](writeups/part2-c2-brute-force-ssh.md)**
+- **[Part 2 — C2 Beaconing, Internal Recon & the SSH Intrusion](writeups/part2-c2-brute-force-ssh.md)**
 
 Originally published on [DataSec Chronicles](https://datasecchronicles.com).
 
 ## 🧰 Tools & concepts
 
 **Tools:** SQLite · SQL · Zeek `conn.log` · command-line log prep
-**Concepts:** anomaly detection · connection-state (S0) analysis · Mirai port signatures · scanning identification · lateral movement · kill-chain reconstruction
+**Concepts:** anomaly detection · connection-state (S0) analysis · Mirai port signatures · scanning identification · beacon detection via coefficient of variation · internal reconnaissance · kill-chain reconstruction
 
-*Part 2 (forthcoming) extends this with C2 beaconing, attack-timing analysis, and external SSH brute-force detection.*
+*Part 2 extends this with C2 beacon detection (using statistical regularity to separate real beacons from bursty false positives), internal reconnaissance / lateral movement, and external SSH brute-force detection — including a confirmed intrusion.*
 
 ## 📂 What's in here
 
