@@ -37,7 +37,7 @@ sqlite3 investigation.db < queries/10_timeline.sql
 | `03_port_signatures` | Mirai port targeting | Ports 23, 22, 2323 — the Mirai signature |
 | `04_host_summary` | Full threat profile in one query | `.43` at 17.7% success vs. clean host at 94.6% |
 | `05_c2_beaconing` | C2 beaconing (regularity, not average) | `192.168.60.22` → 4 external C2 servers at ~755s cadence (CV<0.1) |
-| `06_internal_recon` | Internal reconnaissance / lateral movement | `192.168.10.50` swept 771 internal hosts (HTTPS+ICMP sweep, targeted SMB/RPC/FTP) |
+| `06_internal_recon` | Internal reconnaissance | `192.168.10.50` swept 771 internal hosts (HTTPS+ICMP sweep, targeted SMB/RPC/FTP) |
 | `07_ssh_bruteforce` | External SSH brute-force campaigns | Multiple external IPs; sequential `.133`/`.134` pair — coordinated |
 | `08_intruder_deepdive` | Successful intrusion vs. failed brute force | `5.45.85.158` → `.43`: 3h18m session, ~4MB — confirmed inside |
 | `09_services` | "Normal" traffic during the breach | 74,614 HTTP sessions completed while the breach was active |
@@ -47,15 +47,16 @@ sqlite3 investigation.db < queries/10_timeline.sql
 
 - **[Part 1 — From Raw Log to Botnet Discovery](writeups/part1-botnet-discovery.md)**
 - **[Part 2 — C2 Beaconing, Internal Recon & the SSH Intrusion](writeups/part2-c2-brute-force-ssh.md)**
+- **[TIR-2026-001 — Threat Intelligence Report (MITRE ATT&CK mapping)](reports/TIR-2026-001.md)**
 
 Originally published on [DataSec Chronicles](https://datasecchronicles.com).
 
 ## 🧰 Tools & concepts
 
 **Tools:** SQLite · SQL · Zeek `conn.log` · command-line log prep
-**Concepts:** anomaly detection · connection-state (S0) analysis · Mirai port signatures · scanning identification · beacon detection via coefficient of variation · internal reconnaissance · kill-chain reconstruction
+**Concepts:** anomaly detection · connection-state (S0) analysis · Mirai port signatures · scanning identification · beacon detection via coefficient of variation · internal reconnaissance · MITRE ATT&CK mapping · threat intelligence reporting
 
-*Part 2 extends this with C2 beacon detection (using statistical regularity to separate real beacons from bursty false positives), internal reconnaissance / lateral movement, and external SSH brute-force detection — including a confirmed intrusion.*
+*Part 2 extends this with C2 beacon detection (using statistical regularity to separate real beacons from bursty false positives), internal reconnaissance, and external SSH brute-force detection — including a confirmed intrusion. TIR-2026-001 maps the full incident to MITRE ATT&CK (Enterprise v19.1).*
 
 ## 📂 What's in here
 
@@ -63,6 +64,7 @@ Originally published on [DataSec Chronicles](https://datasecchronicles.com).
 - `setup/` — schema and import steps to reproduce the environment
 - `findings/` — summary of results and query-output screenshots
 - `writeups/` — the full narrative in two parts
+- `reports/` — formal threat intelligence report (TIR-2026-001) with full MITRE ATT&CK mapping
 
 ## 📝 Note on the data
 
